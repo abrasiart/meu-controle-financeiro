@@ -1,7 +1,8 @@
-// 1. DADOS
-let transacoes = [];
+// 1. BANCO DE DADOS INTELIGENTE
+// Tenta carregar do celular. Se não tiver nada, começa com lista vazia.
+let transacoes = JSON.parse(localStorage.getItem('sobraMais_transacoes')) || [];
 
-// NOVA LISTA DE ÍCONES (Usando Boxicons - Estilo Outline)
+// CONFIGURAÇÃO DOS ÍCONES (Boxicons)
 const categoriasConfig = {
     'transporte': { nome: 'Transporte', icone: 'bx bx-car' },
     'saude': { nome: 'Saúde', icone: 'bx bx-pulse' },
@@ -16,7 +17,12 @@ const categoriasConfig = {
     'outros': { nome: 'Outros', icone: 'bx bx-dots-horizontal-rounded' }
 };
 
-// 2. FUNÇÃO PRINCIPAL
+// --- FUNÇÃO NOVA: Salva tudo na memória do celular ---
+function salvarNoCelular() {
+    localStorage.setItem('sobraMais_transacoes', JSON.stringify(transacoes));
+}
+
+// 2. FUNÇÃO PRINCIPAL (Atualiza a tela)
 function atualizarDashboard() {
     let totalEntradas = 0;
     let totalSaidas = 0;
@@ -31,15 +37,17 @@ function atualizarDashboard() {
 
     const saldo = totalEntradas - totalSaidas;
 
+    // Atualiza textos
     document.getElementById('valor-gasto').innerText = totalSaidas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     document.getElementById('valor-saldo').innerText = saldo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
+    // Atualiza gráficos e listas
     verificarSaudeFinanceira(totalEntradas, totalSaidas);
     atualizarPainelCategorias(totalEntradas);
     atualizarExtrato();
 }
 
-// 3. NAVEGAÇÃO ENTRE TELAS
+// 3. NAVEGAÇÃO
 function abrirPainel() {
     document.getElementById('tela-categorias').style.display = 'block';
 }
@@ -119,6 +127,8 @@ function salvarTransacao(event) {
             tipo: tipo,
             categoria: categoria
         });
+        
+        salvarNoCelular(); // <--- SALVA NO CELULAR
         atualizarDashboard();
         fecharModal();
     }
@@ -165,7 +175,7 @@ function atualizarPainelCategorias(totalEntradas) {
     });
 }
 
-// 7. EXTRATO
+// 7. EXTRATO E BOTÕES DE AÇÃO
 function atualizarExtrato() {
     const lista = document.getElementById('lista-transacoes');
     lista.innerHTML = '';
@@ -187,10 +197,9 @@ function atualizarExtrato() {
         let nomeCategoriaExibicao = 'Geral';
         let iconeExibicao = '';
 
-        // Lógica simples para definir ícone
         if (item.tipo === 'entrada') {
             nomeCategoriaExibicao = 'Entrada';
-            iconeExibicao = '<i class="bx bx-down-arrow-circle"></i>'; // Ícone de entrada
+            iconeExibicao = '<i class="bx bx-down-arrow-circle"></i>'; 
         } else if (item.categoria && categoriasConfig[item.categoria]) {
             nomeCategoriaExibicao = categoriasConfig[item.categoria].nome;
             iconeExibicao = `<i class="${categoriasConfig[item.categoria].icone}"></i>`;
@@ -214,4 +223,23 @@ function atualizarExtrato() {
     });
 }
 
+// Função de Excluir (Agora salva no celular)
+function removerTransacao(id) {
+    if(confirm("Tem certeza que quer apagar?")) {
+        transacoes = transacoes.filter(item => item.id !== id);
+        salvarNoCelular(); // <--- ATUALIZA A MEMÓRIA
+        atualizarDashboard();
+    }
+}
+
+// Função de Limpar Tudo (Agora salva no celular)
+function limparHistorico() {
+    if(confirm("Isso vai apagar TUDO. Tem certeza?")) {
+        transacoes = [];
+        salvarNoCelular(); // <--- LIMPA A MEMÓRIA TAMBÉM
+        atualizarDashboard();
+    }
+}
+
+// Inicializa tudo ao carregar a página
 atualizarDashboard();
